@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SESMT — Empresa Exemplo</title>
+<!-- SCRIPT DE EMERGÊNCIA: mata SW e caches ANTES de qualquer outra coisa -->
+<script>
+(function(){
+  // Limpar caches imediatamente
+  if(typeof caches!=='undefined'){
+    caches.keys().then(function(ks){
+      ks.forEach(function(k){ if(!k.startsWith('sesmt-v16-')&&!k.startsWith('sesmt-lookups-v3-')) caches.delete(k); });
+    });
+  }
+  // Desregistrar SWs antigos
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){
+        var url=reg.active&&reg.active.scriptURL||'';
+        // Se o SW ativo não é o novo (v16), desregistrar
+        if(url.indexOf('/sw.js')>-1){
+          // Verificar se é antigo checando o cache
+          caches.has('sesmt-v16-20260626').then(function(tem){
+            if(!tem){ reg.unregister(); }
+          });
+        } else if(url){
+          reg.unregister();
+        }
+      });
+    });
+  }
+})();
+</script>
+<link rel="stylesheet" href="css/main.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="apple-touch-icon" href="/logo.png">
+<meta name="theme-color" content="#F7931E">
+<!-- CSS MOBILE CRÍTICO — embutido para não depender de cache do main.css -->
+<style>
+@media (max-width: 640px) {
+    /* Sidebar completamente oculta */
+    aside.sidebar,
+    .sidebar { display: none !important; width: 0 !important; }
+
+    /* Main ocupa tela toda */
+    .main { margin-left: 0 !important; padding-bottom: 74px !important; }
+
+    /* Topbar compacta */
+    .topbar { padding: 0 12px !important; height: 50px !important; }
+    .topbar-title { font-size: 15px !important; }
+
+    /* Esconder busca */
+    #busca-global-wrap { display: none !important; }
+
+    /* Conteúdo */
+    .page-content { padding: 10px !important; }
+
+    /* KPIs em 2 colunas */
+    .kpi-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    .kpi { padding: 13px 11px 10px !important; }
+    .kpi-value { font-size: 24px !important; }
+    .kpi-label { font-size: 9px !important; }
+    .kpi-sub { font-size: 10px !important; }
+    .kpi::before, .kpi::after { display: none !important; }
+
+    /* Cards */
+    .card { padding: 12px !important; margin-bottom: 10px !important; }
+    .card-title { font-size: 10px !important; margin-bottom: 10px !important; }
+
+    /* Tabela: scroll horizontal, nunca quebra texto */
+    .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+    table { font-size: 12px !important; min-width: 500px !important; white-space: nowrap !important; }
+    thead th { padding: 8px 10px !important; font-size: 9px !important; }
+    tbody td { padding: 9px 10px !important; white-space: nowrap !important; }
+
+    /* Formulários em coluna única */
+    .form-grid-2,
+    .form-grid-3 { grid-template-columns: 1fr !important; }
+    .filtros { flex-direction: column !important; }
+    .filtros .form-group { width: 100% !important; }
+
+    /* Bottom nav visível */
+    .bottom-nav { display: flex !important; }
+}
+
+/* Bottom nav base */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 62px;
+    background: rgba(255,255,255,.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.09);
+    z-index: 9990;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #8890A8;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 56px;
+    text-align: center;
+    border: none;
+    background: none;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-item .bn-icon { font-size: 21px; line-height: 1; }
+.bottom-nav-item.active { color: #F7931E; background: #FFF4E6; }
+.bottom-nav-item:active { transform: scale(.90); }
+</style>
+<!-- Chart.js servido localmente — sem dependência de CDN externo -->
+<script src="js/chart.umd.js"></script>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><img src="/logo.png" alt="Empresa Exemplo" style="width:100%;height:100%;object-fit:contain;border-radius:12px;"></div>
+    <div class="login-title">SESMT</div>
+    <div class="login-subtitle">Empresa Exemplo</div>
+    <hr class="login-divider">
+    <div class="login-hint">
+      Use sua conta <strong>@empresaexemplo.com.br</strong> para entrar.
+    </div>
+
+    <button id="btn-ms-login" class="btn-ms-login">
+      <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+      </svg>
+      Entrar com Microsoft
+    </button>
+
+    <div id="login-loading" class="login-loading">
+      <div class="spinner"></div>
+      Redirecionando...
+    </div>
+
+    <div id="login-error" class="login-error"></div>
+
+    <div class="login-version">SESMT v2.1 · 2026</div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="app-screen" class="app" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><img src="/logo.png" alt="Empresa Exemplo"></div>
+      <div class="logo-text">SESMT<br><span>Empresa Exemplo</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-link" data-page="dashboard" href="#dashboard"><span class="icon">📊</span> Dashboard</a>
+      <div class="nav-section">Registro</div>
+      <a class="nav-link" data-page="inspecoes" href="#inspecoes"><span class="icon">📋</span> Inspeções de Campo</a>
+      <a class="nav-link" data-page="lideranca" href="#lideranca"><span class="icon">👔</span> Ins. Liderança</a>
+      <a class="nav-link" data-page="ncs" href="#ncs"><span class="icon">⚠️</span> Não Conformidades</a>
+      <a class="nav-link" data-page="acoes" href="#acoes"><span class="icon">🎯</span> Ações SESMT</a>
+      <div class="nav-section">Administração</div>
+      <a class="nav-link" data-page="colaboradores" href="#colaboradores"><span class="icon">👥</span> Colaboradores</a>
+      <a class="nav-link" data-page="checklists" href="#checklists"><span class="icon">📋</span> Modelos de Checklist</a>
+      <a class="nav-link" data-page="checklist-lancamento" href="#checklist-lancamento"><span class="icon">✅</span> Lançar Checklist</a>
+      <div class="nav-section">Indicadores</div>
+      <a class="nav-link" data-page="indicadores" href="#indicadores"><span class="icon">📈</span> NDGS Mensal</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div id="user-info" style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:8px;
+                                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <button id="btn-logout" style="
+        width:100%;background:transparent;border:1px solid rgba(255,255,255,.12);
+        color:rgba(255,255,255,.4);border-radius:6px;padding:7px;font-size:11px;
+        cursor:pointer;font-family:inherit;transition:all .15s;
+      ">Sair</button>
+      <div class="sidebar-version" style="margin-top:6px">v2.1 · 2026</div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title" id="page-title">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <div id="topbar-actions"></div>
+        <div id="busca-global-wrap" style="position:relative">
+            <input type="text" id="busca-global-inp" placeholder="🔍 Buscar..."
+                style="padding:6px 12px;border:1.5px solid var(--cinza2);border-radius:8px;
+                       font-size:12px;font-family:inherit;color:var(--texto);background:var(--cinza1);
+                       width:180px;outline:none;transition:all .2s"
+                onfocus="this.style.borderColor='var(--laranja)';this.style.width='240px'"
+                onblur="this.style.borderColor='var(--cinza2)';this.style.width='180px'">
+            <div id="busca-global-result" style="display:none;position:absolute;top:38px;right:0;
+                width:380px;background:#fff;border:1.5px solid var(--cinza2);border-radius:10px;
+                box-shadow:var(--shadow-lg);z-index:9999;max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div class="topbar-user">
+          <span class="user-avatar" id="user-avatar">RE</span>
+        </div>
+      </div>
+    </header>
+    <main class="page-content" id="page-content">
+      <div class="spinner" style="margin:60px auto"></div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script>
+<script>
+// TODO: substitua pelos IDs do seu app registrado no Azure AD (Entra ID).
+// Em um build real, o ideal é injetar esses valores em tempo de build/deploy
+// em vez de deixá-los hardcoded no HTML.
+const TENANT_ID = 'SEU_AZURE_TENANT_ID';
+const CLIENT_ID = 'SEU_AZURE_CLIENT_ID';
+
+// Lista de e-mails com acesso liberado no frontend (checagem real e definitiva
+// é feita no backend via DOMINIO_EMAIL, ver backend/auth.py)
+const EMAILS_OK = [
+    'admin1@empresaexemplo.com.br',
+    'admin2@empresaexemplo.com.br',
+    'ti@empresaexemplo.com.br',
+];
+
+// Usar sessionStorage para evitar conflito entre abas
+const msalConfig = {
+    auth: {
+        clientId:    CLIENT_ID,
+        authority:   'https://login.microsoftonline.com/' + TENANT_ID,
+        redirectUri: 'https://seu-app.onrender.com/',
+    },
+    cache: {
+        cacheLocation: 'localStorage',
+        storeAuthStateInCookie: true,
+    },
+};
+
+const msalLib = window.msalBrowser || window.msal;
+const msalInstance = new msalLib.PublicClientApplication(msalConfig);
+
+// Token mantido em closure privada — não exposto como window._msalToken
+// para evitar acesso por scripts terceiros carregados na página.
+const __sesmt = (() => {
+    let _token = '';
+    return {
+        setToken: (t) => { _token = t; },
+        token:    ()  => _token,
+    };
+})();
+// Expor no window para acesso pelos módulos ES (pages/*.js, js/api.js)
+window.__sesmt = __sesmt;
+
+// Interceptar fetch globalmente para injetar token em todas as chamadas /api/
+const _fetchOriginal = window.fetch.bind(window);
+window.fetch = function(url, opts) {
+    const urlStr = typeof url === 'string' ? url : (url?.url || '');
+    if (urlStr.startsWith('/api/') || urlStr.includes(location.origin + '/api/')) {
+        opts = Object.assign({ credentials: 'include' }, opts);
+        const token = __sesmt.token();
+        if (token) {
+            let headers = {};
+            if (opts.headers instanceof Headers) {
+                opts.headers.forEach((v, k) => { headers[k] = v; });
+            } else if (opts.headers) {
+                headers = Object.assign({}, opts.headers);
+            }
+            headers['Authorization'] = 'Bearer ' + token;
+            opts.headers = headers;
+        }
+    }
+    return _fetchOriginal(url, opts);
+};
+
+// Handler global de erro de API
+window.mostrarErroPagina = function(container, msg, onRetry) {
+    if (!container) return;
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                    padding:60px 20px;text-align:center;color:#888">
+            <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+            <h3 style="color:#333;margin-bottom:8px">Erro ao carregar dados</h3>
+            <p style="margin-bottom:24px;max-width:400px">${msg}</p>
+            ${onRetry ? `<button onclick="location.reload()" 
+                style="padding:10px 24px;background:#e8400c;color:white;border:none;
+                       border-radius:6px;cursor:pointer;font-size:14px">
+                Tentar novamente</button>` : ''}
+        </div>`;
+};
+
+function mostrarErro(msg) {
+    const el = document.getElementById('login-error');
+    el.innerHTML = msg;
+    el.style.display = 'block';
+    document.getElementById('login-loading').style.display = 'none';
+    document.getElementById('btn-ms-login').style.display = 'flex';
+}
+
+function emailAutorizado(account) {
+    const email = (account.username || '').toLowerCase();
+    return EMAILS_OK.includes(email);
+}
+
+function renovarToken(account) {
+    msalInstance.acquireTokenSilent({
+        scopes: ['openid', 'profile', 'email'],
+        account: account,
+        forceRefresh: false
+    }).then(r => {
+        __sesmt.setToken(r.idToken);
+    }).catch(() => {});
+}
+
+function iniciarApp(account) {
+    const email    = account.username || '';
+    const nome     = account.name || email.split('@')[0];
+    const iniciais = nome.split(' ').map(p => p[0]).join('').substring(0,2).toUpperCase();
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display   = 'flex';
+    document.getElementById('user-info').textContent       = email;
+    document.getElementById('user-avatar').textContent     = iniciais;
+
+    document.getElementById('btn-logout').onclick = () => {
+        msalInstance.logoutRedirect({ postLogoutRedirectUri: 'https://seu-app.onrender.com/' });
+    };
+
+    // Monitor offline
+    import('./js/offline.js').then(m => m.iniciarMonitorConexao()).catch(()=>{});
+
+    // Renovar token a cada 50 min
+    setInterval(() => renovarToken(account), 50 * 60 * 1000);
+
+    // Token já garantido antes de chegar aqui — carregar páginas
+    carregarPaginas();
+}
+
+function carregarPaginas() {
+    Promise.all([
+        import('./pages/dashboard.js'),
+        import('./pages/inspecoes.js'),
+        import('./pages/lideranca.js'),
+        import('./pages/ncs.js'),
+        import('./pages/indicadores.js'),
+        import('./pages/acoes.js'),
+        import('./pages/colaboradores.js'),
+        import('./pages/checklists.js'),
+        import('./pages/checklist-lancamento.js'),
+    ]).then(([
+        { renderDashboard },
+        { renderInspecoes },
+        { renderLideranca },
+        { renderNcs },
+        { renderIndicadores },
+        { renderAcoes },
+        { renderColaboradores },
+        { renderChecklists },
+        { renderChecklistLancamento },
+    ]) => {
+        const pages = {
+            dashboard:      { title: 'Dashboard',               fn: renderDashboard },
+            inspecoes:      { title: 'Inspeções de Campo',       fn: renderInspecoes },
+            lideranca:      { title: 'Inspeções de Liderança',   fn: renderLideranca },
+            ncs:            { title: 'Não Conformidades',        fn: renderNcs },
+            acoes:          { title: 'Acompanhamento de Ações',  fn: renderAcoes },
+            colaboradores:  { title: 'Colaboradores',            fn: renderColaboradores },
+            indicadores:    { title: 'Indicadores NDGS',         fn: renderIndicadores },
+            checklists:     { title: 'Modelos de Checklist',     fn: renderChecklists },
+            'checklist-lancamento': { title: 'Lançar Checklist', fn: renderChecklistLancamento },
+        };
+
+        const content = document.getElementById('page-content');
+        const title   = document.getElementById('page-title');
+        const actions = document.getElementById('topbar-actions');
+
+        function navigate(hash) {
+            const page = (hash||'').replace('#','').split('?')[0] || 'dashboard';
+            const def  = pages[page] || pages.dashboard;
+            document.querySelectorAll('.nav-link').forEach(l =>
+                l.classList.toggle('active', l.dataset.page === page));
+            // Sincronizar bottom nav mobile
+            document.querySelectorAll('.bottom-nav-item').forEach(b =>
+                b.classList.toggle('active', b.dataset.page === page));
+            title.textContent = def.title;
+            actions.innerHTML = '';
+            content.innerHTML = '<div class="spinner" style="margin:60px auto"></div>';
+            def.fn(content, actions, navigate);
+        }
+
+        // Expor navigate globalmente para o bottom nav (onclick inline)
+        window.navigate = navigate;
+        window.addEventListener('hashchange', () => navigate(location.hash));
+        navigate(location.hash || '#dashboard');
+
+        // Busca global
+        const buscaInp = document.getElementById('busca-global-inp');
+        const buscaRes = document.getElementById('busca-global-result');
+        let buscaTimer;
+
+        buscaInp.addEventListener('input', function() {
+            clearTimeout(buscaTimer);
+            const q = this.value.trim();
+            if (q.length < 2) { buscaRes.style.display = 'none'; return; }
+            buscaTimer = setTimeout(async () => {
+                const r = await fetch('/api/busca?q=' + encodeURIComponent(q)).then(r=>r.json());
+                const d = r.data || r || {};
+                const total = (d.inspecoes||[]).length + (d.ncs||[]).length + (d.colaboradores||[]).length + (d.acoes||[]).length;
+                if (total === 0) { buscaRes.innerHTML = '<div style="padding:16px;text-align:center;color:#999;font-size:13px">Nenhum resultado</div>'; buscaRes.style.display='block'; return; }
+
+                const section = (title, items, icon, fn) => items.length === 0 ? '' : `
+                    <div style="padding:8px 14px 4px;font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em">${icon} ${title}</div>
+                    ${items.map(fn).join('')}`;
+
+                buscaRes.innerHTML = section('Inspeções', d.inspecoes||[], '📋', i =>
+                    `<div class="busca-item" onclick="location.hash='#inspecoes';this.closest('#busca-global-result').style.display='none'"
+                        style="padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0"
+                        onmouseover="this.style.background='#FFF4E8'" onmouseout="this.style.background=''">
+                        <span style="font-weight:700;color:#1B4F8A">${i.codigo}</span>
+                        <span style="color:#888;margin-left:8px">${i.tipo_inspecao||''} · ${i.municipio||''}</span>
+                    </div>`) +
+                section('NCs', d.ncs||[], '⚠️', n =>
+                    `<div class="busca-item" onclick="location.hash='#ncs';this.closest('#busca-global-result').style.display='none'"
+                        style="padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0"
+                        onmouseover="this.style.background='#FFF4E8'" onmouseout="this.style.background=''">
+                        <span style="font-weight:700;color:#C0392B">${n.codigo}</span>
+                        <span style="color:#888;margin-left:8px">${(n.descricao||'').substring(0,60)}</span>
+                    </div>`) +
+                section('Colaboradores', d.colaboradores||[], '👤', c =>
+                    `<div class="busca-item" onclick="location.hash='#colaboradores';this.closest('#busca-global-result').style.display='none'"
+                        style="padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0"
+                        onmouseover="this.style.background='#FFF4E8'" onmouseout="this.style.background=''">
+                        <span style="font-weight:700">${c.nome}</span>
+                        <span style="color:#888;margin-left:8px">${c.cargo||''} · ${c.cpf||''}</span>
+                    </div>`) +
+                section('Ações SESMT', d.acoes||[], '🎯', a =>
+                    `<div class="busca-item" onclick="location.hash='#acoes';this.closest('#busca-global-result').style.display='none'"
+                        style="padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0"
+                        onmouseover="this.style.background='#FFF4E8'" onmouseout="this.style.background=''">
+                        <span style="font-weight:700;color:#F7931E">${a.tipo}</span>
+                        <span style="color:#888;margin-left:8px">${(a.evento||'').substring(0,60)}</span>
+                    </div>`);
+
+                buscaRes.style.display = 'block';
+            }, 350);
+        });
+
+        document.addEventListener('click', e => {
+            if (!document.getElementById('busca-global-wrap').contains(e.target))
+                buscaRes.style.display = 'none';
+        });
+    });
+}
+
+// ── Inicializar MSAL com redirect flow ─────────────────────
+msalInstance.initialize().then(() => {
+    // Processar retorno do redirect
+    return msalInstance.handleRedirectPromise();
+}).then(resp => {
+    if (resp && resp.account) {
+        // Voltou do redirect com conta — token já disponível no resp
+        if (!emailAutorizado(resp.account)) {
+            mostrarErro('Acesso negado. O e-mail <b>' + resp.account.username + '</b> não está autorizado.');
+            msalInstance.logoutRedirect({ postLogoutRedirectUri: 'https://seu-app.onrender.com/' });
+            return;
+        }
+        // Salvar token imediatamente — já vem no resp
+        if (resp.idToken) __sesmt.setToken(resp.idToken);
+        iniciarApp(resp.account);
+        return;
+    }
+
+    // Verificar conta em cache
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+        if (emailAutorizado(accounts[0])) {
+            msalInstance.acquireTokenSilent({
+                scopes: ['openid', 'profile', 'email'],
+                account: accounts[0],
+                forceRefresh: false
+            }).then(r => {
+                __sesmt.setToken(r.idToken);
+                iniciarApp(accounts[0]);
+            }).catch(() => {
+                mostrarErro('Sessão expirada. <a href="/" style="color:#F7931E">Clique aqui</a> para entrar novamente.');
+                document.getElementById('login-screen').style.display = 'flex';
+            });
+            return;
+        }
+        mostrarErro('E-mail não autorizado: ' + accounts[0].username);
+        return;
+    }
+
+    // Nenhuma sessão — mostrar botão de login
+    document.getElementById('login-screen').style.display = 'flex';
+
+}).catch(err => {
+    console.error('MSAL init error:', err);
+    document.getElementById('login-screen').style.display = 'flex';
+    if (err.message) mostrarErro('Erro: ' + err.message);
+});
+
+// ── Botão login — usa redirect em vez de popup ─────────────
+document.getElementById('btn-ms-login').onclick = () => {
+    document.getElementById('login-error').style.display  = 'none';
+    document.getElementById('btn-ms-login').style.display = 'none';
+    document.getElementById('login-loading').style.display = 'block';
+
+    msalInstance.loginRedirect({
+        scopes:  ['openid', 'profile', 'email'],
+        prompt:  'select_account',
+    }).catch(err => {
+        mostrarErro('Erro ao iniciar login: ' + (err.message || err));
+    });
+};
+</script>
+
+<script>
+// ── LIMPEZA DE CACHE AUTOMÁTICA ───────────────────────────────
+// Roda imediatamente ao carregar a página, antes do SW ser registrado.
+// Remove qualquer versão de cache antiga automaticamente.
+// 👇 Manter em sincronia com DEPLOY_DATE no sw.js
+const CACHE_ATUAL   = 'sesmt-v16-20260626';
+const LOOKUPS_ATUAL = 'sesmt-lookups-v3-20260626';
+const CACHES_VALIDOS = new Set([CACHE_ATUAL, LOOKUPS_ATUAL]);
+
+(async () => {
+    try {
+        // Apagar todos os caches que não sejam da versão atual
+        if ('caches' in window) {
+            const nomes = await caches.keys();
+            await Promise.all(nomes.filter(n => !CACHES_VALIDOS.has(n)).map(n => {
+                console.log('[Cache] Removendo versão antiga:', n);
+                return caches.delete(n);
+            }));
+        }
+    } catch(e) {}
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            // Forçar atualização imediata: desregistrar SW antigo se a URL mudou
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) {
+                const url = reg.active?.scriptURL || '';
+                if (url && !url.includes('/sw.js')) {
+                    await reg.unregister();
+                }
+            }
+        } catch(_) {}
+
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+                console.log('[SW] OK:', reg.scope);
+                window.__swReg = reg;
+                // Forçar ativação imediata se houver SW em espera
+                if (reg.waiting) reg.waiting.postMessage({ tipo: 'skip-waiting' });
+                reg.addEventListener('updatefound', () => {
+                    const novo = reg.installing;
+                    if (novo) {
+                        novo.addEventListener('statechange', () => {
+                            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+                                novo.postMessage({ tipo: 'skip-waiting' });
+                            }
+                        });
+                    }
+                });
+            })
+            .catch(e => console.warn('[SW] Erro:', e));
+    });
+
+    // Recarregar página quando novo SW assumir o controle
+    let _refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!_refreshing) { _refreshing = true; window.location.reload(); }
+    });
+
+    // Ouvir mensagens do SW (Background Sync)
+    navigator.serviceWorker.addEventListener('message', async event => {
+        if (event.data?.tipo === 'background-sync') {
+            try {
+                const { sync } = await import('./js/offline.js');
+                const r = await sync();
+                if (r.enviados > 0) console.log('[BGSync] Sincronizados:', r.enviados);
+            } catch(e) { console.warn('[BGSync] Erro:', e); }
+        }
+    });
+}
+
+window.addEventListener('online', async () => {
+    if (window.__swReg && 'sync' in window.__swReg) {
+        try { await window.__swReg.sync.register('sesmt-sync'); } catch(_) {}
+    }
+});
+</script>
+<!-- ── BOTTOM NAV — visível apenas no mobile (≤600px) ── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bottom-nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+    <span class="bn-icon">📊</span>
+    <span>Dashboard</span>
+  </button>
+  <button class="bottom-nav-item" data-page="inspecoes" onclick="navigate('inspecoes')">
+    <span class="bn-icon">🔍</span>
+    <span>Inspeções</span>
+  </button>
+  <button class="bottom-nav-item" data-page="ncs" onclick="navigate('ncs')">
+    <span class="bn-icon">⚠️</span>
+    <span>NCs</span>
+  </button>
+  <button class="bottom-nav-item" data-page="checklist-lancamento" onclick="navigate('checklist-lancamento')">
+    <span class="bn-icon">✅</span>
+    <span>Lançar</span>
+  </button>
+  <button class="bottom-nav-item" data-page="acoes" onclick="navigate('acoes')">
+    <span class="bn-icon">🎯</span>
+    <span>Ações</span>
+  </button>
+</nav>
+
+</body>
+</html>
