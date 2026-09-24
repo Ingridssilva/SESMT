@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: sesmt
+    runtime: python
+    pythonVersion: "3.11.9"
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn backend.app:app --config gunicorn.conf.py
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+      # ── Auth Azure AD ──────────────────────────────────────────────────────
+      - key: AZURE_TENANT_ID
+        sync: false
+      - key: AZURE_CLIENT_ID
+        sync: false
+      # AZURE_CLIENT_SECRET não é usado no backend (autenticação é via JWKS público)
+      # Mantido apenas para referência, não é carregado pelo app
+
+      - key: DOMINIO_EMAIL
+        value: empresaexemplo.com.br
+
+      # ── CORS ───────────────────────────────────────────────────────────────
+      # Lista separada por vírgula de origens permitidas.
+      # Em dev local, adicione http://localhost:5001 se necessário.
+      - key: CORS_ORIGINS
+        value: "https://seu-app.onrender.com"
+
+      # ── Sessão Flask ───────────────────────────────────────────────────────
+      # IMPORTANTE: Render gera e persiste automaticamente.
+      # Sem essa variável, todos os usuários são deslogados a cada deploy/restart.
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+
+      # ── SharePoint / Graph API ─────────────────────────────────────────────
+      - key: SP_TENANT_ID
+        sync: false
+      - key: SP_CLIENT_ID
+        sync: false
+      - key: SP_CLIENT_SECRET
+        sync: false
+      - key: SP_PASTA_BASE
+        # IMPORTANTE: informar APENAS o caminho DENTRO da biblioteca "Documentos Compartilhados".
+        # NÃO incluir "Documentos Compartilhados/" no início — o drive já é essa biblioteca.
+        # Caminho resultante no SharePoint:
+        #   Documentos Compartilhados / Departamento de SESMT / Campo / 2026-05 / INSP-2026-0001 /
+        value: Departamento de SESMT
+
+      # ── ZapSign ───────────────────────────────────────────────────────────
+      - key: ZAPSIGN_TOKEN
+        sync: false
+      - key: ZAPSIGN_SANDBOX
+        value: "false"
+
+      - key: ZAPSIGN_WEBHOOK_URL
+        # URL pública para receber confirmação de assinatura do ZapSign.
+        # Ex: https://seu-app.onrender.com/api/zapsign/webhook
+        sync: false
+
+      # ── Cron Job Protection ────────────────────────────────────────────────
+      # Segredo compartilhado entre o Render Cron Job e o endpoint /api/ncs/verificar-vencidas
+      # Configure também no header do cron: X-Cron-Secret: <valor>
+      - key: CRON_SECRET
+        generateValue: true
