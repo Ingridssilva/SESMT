@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Checklist SESMT</title>
+<style>
+  :root {
+    --laranja: #E8500A;
+    --laranja-escuro: #C44008;
+    --laranja-claro: #FFF0E8;
+    --cinza-escuro: #1A1A1A;
+    --cinza-medio: #4A4A4A;
+    --cinza-claro: #F5F5F5;
+    --borda: #E0E0E0;
+    --verde: #1A7A3C;
+    --verde-bg: #E8F5EE;
+    --vermelho: #C0392B;
+    --vermelho-bg: #FDECEA;
+    --amarelo: #7A6000;
+    --amarelo-bg: #FFF8E0;
+    --branco: #FFFFFF;
+    --sombra: 0 2px 12px rgba(0,0,0,0.10);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--cinza-claro); color: var(--cinza-escuro); }
+
+  /* ── TELAS ── */
+  .tela { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .tela.ativa { display: flex; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--laranja);
+    color: white;
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(232,80,10,0.3);
+  }
+  .header-back {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-titulo { font-size: 16px; font-weight: 700; flex: 1; line-height: 1.2; }
+  .header-sub { font-size: 11px; opacity: 0.85; margin-top: 1px; }
+  .header-progresso {
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.25);
+    padding: 4px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ── BARRA DE PROGRESSO ── */
+  .progress-bar-wrap { background: rgba(0,0,0,0.15); height: 4px; flex-shrink: 0; }
+  .progress-bar-fill { height: 100%; background: white; transition: width 0.3s ease; }
+
+  /* ── SCROLL CONTENT ── */
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+
+  /* ── TELA INICIAL ── */
+  .logo-wrap { text-align: center; padding: 32px 0 20px; }
+  .logo-icon { font-size: 48px; }
+  .logo-titulo { font-size: 22px; font-weight: 800; color: var(--laranja); margin-top: 8px; }
+  .logo-sub { font-size: 13px; color: var(--cinza-medio); margin-top: 4px; }
+
+  .secao-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cinza-medio);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 20px 0 8px;
+  }
+
+  .card-modelo {
+    background: var(--branco);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--sombra);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    -webkit-user-select: none;
+  }
+  .card-modelo:active { transform: scale(0.98); border-color: var(--laranja); }
+  .card-modelo-icone {
+    width: 48px; height: 48px;
+    background: var(--laranja-claro);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .card-modelo-info { flex: 1 }
+  .card-modelo-titulo { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .card-modelo-codigo { font-size: 11px; color: var(--cinza-medio); margin-top: 2px; }
+  .card-modelo-seta { color: var(--laranja); font-size: 18px; }
+
+  /* ── TELA CABEÇALHO ── */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--cinza-medio); margin-bottom: 5px; display: block; }
+  .form-input {
+    width: 100%;
+    border: 1.5px solid var(--borda);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    background: var(--branco);
+    color: var(--cinza-escuro);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  .form-input:focus { border-color: var(--laranja); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── BTN PRIMÁRIO ── */
+  .btn-primario {
+    width: 100%;
+    background: var(--laranja);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primario:active { background: var(--laranja-escuro); transform: scale(0.98); }
+  .btn-primario:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ── TELA ITEM ── */
+  .item-secao-badge {
+    display: inline-block;
+    background: var(--laranja-claro);
+    color: var(--laranja-escuro);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .item-descricao {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 24px;
+    color: var(--cinza-escuro);
+  }
+
+  .botoes-situacao {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .btn-situacao {
+    border: 2.5px solid var(--borda);
+    border-radius: 14px;
+    padding: 18px 20px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--branco);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    text-align: left;
+  }
+  .btn-situacao:active { transform: scale(0.98); }
+  .btn-situacao .sit-icone { font-size: 26px; flex-shrink: 0; }
+  .btn-situacao .sit-texto { flex: 1; }
+  .btn-situacao .sit-sub { font-size: 12px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+
+  .btn-situacao.conforme    { border-color: var(--verde); background: var(--verde-bg); color: var(--verde); }
+  .btn-situacao.nao-conforme { border-color: var(--vermelho); background: var(--vermelho-bg); color: var(--vermelho); }
+  .btn-situacao.na          { border-color: var(--amarelo); background: var(--amarelo-bg); color: var(--amarelo); }
+  .btn-situacao.bom         { border-color: var(--verde); background: var(--verde-bg); color: var(--verde); }
+  .btn-situacao.ruim        { border-color: var(--vermelho); background: var(--vermelho-bg); color: var(--vermelho); }
+
+  /* campo quant */
+  .quant-wrap { margin-bottom: 18px; }
+  .quant-label { font-size: 12px; font-weight: 600; color: var(--cinza-medio); margin-bottom: 6px; display: block; }
+  .quant-controles { display: flex; align-items: center; gap: 0; }
+  .quant-btn {
+    width: 48px; height: 48px;
+    background: var(--cinza-claro);
+    border: 1.5px solid var(--borda);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    color: var(--cinza-escuro);
+  }
+  .quant-btn:first-child { border-radius: 10px 0 0 10px; }
+  .quant-btn:last-child  { border-radius: 0 10px 10px 0; }
+  .quant-valor {
+    flex: 1;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    border: 1.5px solid var(--borda);
+    border-left: none; border-right: none;
+    padding: 10px;
+    background: var(--branco);
+  }
+
+  /* obs */
+  .obs-wrap { margin-bottom: 16px; }
+  .obs-toggle {
+    background: none;
+    border: 1.5px dashed var(--borda);
+    border-radius: 10px;
+    padding: 12px 14px;
+    width: 100%;
+    text-align: left;
+    font-size: 13px;
+    color: var(--cinza-medio);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .obs-input {
+    width: 100%;
+    border: 1.5px solid var(--borda);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    resize: none;
+    min-height: 80px;
+    font-family: inherit;
+    background: var(--branco);
+    outline: none;
+    display: none;
+  }
+  .obs-input:focus { border-color: var(--laranja); }
+  .obs-input.visivel { display: block; }
+
+  /* nav inferior */
+  .nav-inferior {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    background: var(--branco);
+    border-top: 1px solid var(--borda);
+    display: flex;
+    gap: 10px;
+  }
+  .btn-sec {
+    flex: 1;
+    background: var(--cinza-claro);
+    border: 1.5px solid var(--borda);
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--cinza-escuro);
+  }
+
+  /* ── TELA RESUMO ── */
+  .resumo-header {
+    background: var(--branco);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--sombra);
+    text-align: center;
+  }
+  .resumo-emoji { font-size: 48px; margin-bottom: 8px; }
+  .resumo-titulo { font-size: 18px; font-weight: 800; }
+  .resumo-sub { font-size: 13px; color: var(--cinza-medio); margin-top: 4px; }
+
+  .resumo-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--branco);
+    border-radius: 12px;
+    padding: 14px 8px;
+    text-align: center;
+    box-shadow: var(--sombra);
+  }
+  .stat-num { font-size: 24px; font-weight: 800; }
+  .stat-label { font-size: 10px; color: var(--cinza-medio); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card.verde .stat-num { color: var(--verde); }
+  .stat-card.vermelho .stat-num { color: var(--vermelho); }
+  .stat-card.cinza .stat-num { color: var(--cinza-medio); }
+
+  .nao-conformes-lista { margin-bottom: 16px; }
+  .nc-item {
+    background: var(--vermelho-bg);
+    border-left: 4px solid var(--vermelho);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--cinza-escuro);
+  }
+  .nc-item strong { display: block; font-size: 11px; color: var(--vermelho); margin-bottom: 2px; text-transform: uppercase; }
+
+  .obs-extras-wrap { margin-bottom: 16px; }
+
+  /* resultado geral */
+  .resultado-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .resultado-btn {
+    flex: 1;
+    border: 2.5px solid var(--borda);
+    border-radius: 12px;
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--branco);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .resultado-btn.ativo.conforme  { border-color: var(--verde); background: var(--verde-bg); color: var(--verde); }
+  .resultado-btn.ativo.nao-conforme { border-color: var(--vermelho); background: var(--vermelho-bg); color: var(--vermelho); }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--cinza-escuro);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  .toast.visivel { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* loading */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 100;
+  }
+  .loading-overlay.ativo { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid var(--borda);
+    border-top-color: var(--laranja);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* offline badge */
+  .offline-badge {
+    display: none;
+    background: #7A6000;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .offline-badge.visivel { display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     TELA 1: SELEÇÃO DE MODELO
+══════════════════════════════════════════ -->
+<div class="tela ativa" id="tela-inicio">
+  <div class="scroll">
+    <div class="logo-wrap">
+      <div class="logo-icon">🦺</div>
+      <div class="logo-titulo">Checklist SESMT</div>
+      <div class="logo-sub">Selecione o tipo de inspeção</div>
+    </div>
+
+    <div class="secao-label">Modelos disponíveis</div>
+    <div id="lista-modelos">
+      <div style="text-align:center; padding: 40px; color: #999; font-size:14px;">Carregando modelos...</div>
+    </div>
+
+    <div style="height: 20px;"></div>
+
+    <div style="background: #FFF8E0; border-radius: 12px; padding: 14px 16px; font-size: 12px; color: #7A6000; line-height: 1.5;">
+      ⚡ <strong>Funciona offline.</strong> Preencha o checklist mesmo sem sinal. Os dados serão enviados automaticamente quando a conexão voltar.
+    </div>
+    <div style="height: 20px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TELA 2: CABEÇALHO
+══════════════════════════════════════════ -->
+<div class="tela" id="tela-cabecalho">
+  <div class="header">
+    <button class="header-back" onclick="irParaInicio()">←</button>
+    <div>
+      <div class="header-titulo" id="cab-modelo-titulo">—</div>
+      <div class="header-sub">Informações gerais</div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div style="height:4px"></div>
+
+    <!-- Campos dinâmicos por tipo de modelo -->
+    <div id="campos-cabecalho">
+      <!-- preenchido via JS -->
+    </div>
+
+    <button class="btn-primario" id="btn-iniciar-checklist" onclick="iniciarChecklist()">
+      Iniciar Checklist →
+    </button>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TELA 3: ITEM
+══════════════════════════════════════════ -->
+<div class="tela" id="tela-item">
+  <div class="header">
+    <button class="header-back" onclick="voltarItem()">←</button>
+    <div style="flex:1">
+      <div class="header-titulo" id="item-modelo-nome">—</div>
+      <div class="header-sub" id="item-secao-nome">—</div>
+    </div>
+    <div class="header-progresso" id="item-progresso">0/0</div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <div class="scroll" id="scroll-item">
+    <div style="height: 8px;"></div>
+    <div class="item-secao-badge" id="item-badge-secao">Seção</div>
+    <div class="item-descricao" id="item-descricao">—</div>
+
+    <!-- Botões de situação -->
+    <div class="botoes-situacao" id="botoes-situacao">
+      <!-- gerado por JS -->
+    </div>
+
+    <!-- Quantidade (só se tem_quant) -->
+    <div class="quant-wrap" id="quant-wrap" style="display:none">
+      <span class="quant-label">Quantidade</span>
+      <div class="quant-controles">
+        <button class="quant-btn" onclick="ajustarQuant(-1)">−</button>
+        <div class="quant-valor" id="quant-valor">0</div>
+        <button class="quant-btn" onclick="ajustarQuant(+1)">+</button>
+      </div>
+    </div>
+
+    <!-- Observação -->
+    <div class="obs-wrap" id="obs-wrap">
+      <button class="obs-toggle" id="obs-toggle" onclick="toggleObs()">
+        <span>📝</span> Adicionar observação
+      </button>
+      <textarea class="obs-input" id="obs-input" rows="3" placeholder="Digite a observação..."></textarea>
+    </div>
+
+    <div style="height: 80px;"></div>
+  </div>
+
+  <div class="nav-inferior">
+    <button class="btn-sec" onclick="voltarItem()">← Anterior</button>
+    <button class="btn-sec" id="btn-pular" onclick="proximoItem(null)" style="flex:0.6">Pular</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TELA 4: RESUMO / FINALIZAÇÃO
+══════════════════════════════════════════ -->
+<div class="tela" id="tela-resumo">
+  <div class="header">
+    <div>
+      <div class="header-titulo">Resumo da Inspeção</div>
+      <div class="header-sub" id="resumo-modelo-nome">—</div>
+    </div>
+    <span class="offline-badge" id="offline-badge">OFFLINE</span>
+  </div>
+
+  <div class="scroll">
+    <div style="height: 8px;"></div>
+
+    <div class="resumo-header">
+      <div class="resumo-emoji" id="resumo-emoji">✅</div>
+      <div class="resumo-titulo" id="resumo-titulo">Checklist concluído!</div>
+      <div class="resumo-sub" id="resumo-sub">—</div>
+    </div>
+
+    <div class="resumo-stats">
+      <div class="stat-card verde">
+        <div class="stat-num" id="stat-conformes">0</div>
+        <div class="stat-label">Conformes</div>
+      </div>
+      <div class="stat-card vermelho">
+        <div class="stat-num" id="stat-nao-conformes">0</div>
+        <div class="stat-label">Não conf.</div>
+      </div>
+      <div class="stat-card cinza">
+        <div class="stat-num" id="stat-na">0</div>
+        <div class="stat-label">N/A</div>
+      </div>
+    </div>
+
+    <div id="nc-lista-wrap" style="display:none">
+      <div class="secao-label" style="margin-top:0">Itens não conformes</div>
+      <div class="nao-conformes-lista" id="nc-lista"></div>
+    </div>
+
+    <div class="secao-label">Resultado geral</div>
+    <div class="resultado-wrap">
+      <button class="resultado-btn" id="btn-resultado-conforme" onclick="setResultado('CONFORME')">✅ Conforme</button>
+      <button class="resultado-btn" id="btn-resultado-nc" onclick="setResultado('NÃO CONFORME')">❌ Não Conforme</button>
+    </div>
+
+    <div class="obs-extras-wrap">
+      <div class="secao-label" style="margin-top:0">Observações extras</div>
+      <textarea class="form-input" id="obs-extras" rows="3" placeholder="Observações gerais sobre a inspeção..."></textarea>
+    </div>
+
+    <button class="btn-primario" id="btn-enviar" onclick="enviarChecklist()">
+      Salvar e Enviar
+    </button>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:14px; color:#666;">Enviando...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════
+// CONFIGURAÇÃO — ajustar para produção
+// ══════════════════════════════════
+const API_BASE = 'https://seu-app.onrender.com'; // URL do SESMT
+
+// ══════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════
+let modelos = [];
+let modeloAtual = null;
+let itensTodos = []; // lista flat de todos os itens com info de seção
+let itemIdx = 0;
+let respostas = {}; // { item_id: { situacao, quant, obs } }
+let cabecalho = {};
+let resultadoGeral = null;
+let isOffline = !navigator.onLine;
+
+// ══════════════════════════════════
+// ÍCONES POR TIPO DE MODELO
+// ══════════════════════════════════
+const ICONES = {
+  'SESMT_CHECKLIST_01': '🦺',
+  'SESMT_CHECKLIST_02': '🛡️',
+  'SESMT_CHECKLIST_04': '🚜',
+  'SESMT_FISC_RET': '🔍',
+  'SESMT_FISC_RET_01': '🔍',
+  'SESMT_FISC_CAM': '🚛',
+  'SESMT_FISC_CAM_01': '🚛',
+};
+
+// ══════════════════════════════════
+// OFFLINE
+// ══════════════════════════════════
+window.addEventListener('online',  () => { isOffline = false; sincronizarPendentes(); });
+window.addEventListener('offline', () => { isOffline = true; });
+
+function atualizarBadgeOffline() {
+  const badge = document.getElementById('offline-badge');
+  if (isOffline) badge.classList.add('visivel');
+  else badge.classList.remove('visivel');
+}
+
+// ══════════════════════════════════
+// TOAST
+// ══════════════════════════════════
+function mostrarToast(msg, dur = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visivel');
+  setTimeout(() => t.classList.remove('visivel'), dur);
+}
+
+// ══════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════
+function irParaTela(id) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+  window.scrollTo(0, 0);
+}
+
+function irParaInicio() {
+  modeloAtual = null; itensTodos = []; itemIdx = 0;
+  respostas = {}; cabecalho = {}; resultadoGeral = null;
+  irParaTela('tela-inicio');
+}
+
+// ══════════════════════════════════
+// TELA 1: CARREGAR MODELOS
+// ══════════════════════════════════
+async function carregarModelos() {
+  const lista = document.getElementById('lista-modelos');
+  try {
+    const r = await fetch(`${API_BASE}/api/checklists/modelos`, { credentials: 'include' });
+    if (!r.ok) throw new Error('Erro ' + r.status);
+    modelos = await r.json();
+    renderModelos(modelos);
+  } catch(e) {
+    // tentar cache offline
+    const cache = localStorage.getItem('sesmt_modelos_cache');
+    if (cache) {
+      modelos = JSON.parse(cache);
+      renderModelos(modelos);
+      mostrarToast('⚠️ Modelos do cache offline');
+    } else {
+      lista.innerHTML = `<div style="text-align:center;padding:30px;color:#C0392B;font-size:14px;">
+        Sem conexão e sem cache.<br>Conecte-se para carregar os modelos.
+      </div>`;
+    }
+  }
+}
+
+function renderModelos(lista) {
+  const container = document.getElementById('lista-modelos');
+  if (!lista.length) { container.innerHTML = '<div style="color:#999;text-align:center;padding:20px">Nenhum modelo disponível</div>'; return; }
+  container.innerHTML = lista.map(m => `
+    <div class="card-modelo" onclick="selecionarModelo(${m.id})">
+      <div class="card-modelo-icone">${ICONES[m.codigo] || '📋'}</div>
+      <div class="card-modelo-info">
+        <div class="card-modelo-titulo">${m.titulo}</div>
+        <div class="card-modelo-codigo">${m.codigo} · ${m.tipo === 'ambos' ? 'Campo e Liderança' : 'Campo'}</div>
+      </div>
+      <div class="card-modelo-seta">›</div>
+    </div>
+  `).join('');
+  localStorage.setItem('sesmt_modelos_cache', JSON.stringify(lista));
+}
+
+// ══════════════════════════════════
+// TELA 2: CABEÇALHO
+// ══════════════════════════════════
+const CAMPOS_POR_TIPO = {
+  'SESMT_CHECKLIST_01': [
+    { id:'colaborador_nome', label:'Nome do Colaborador', type:'text', req:true },
+    { id:'colaborador_funcao', label:'Função', type:'text', req:false },
+    { id:'colaborador_matricula', label:'Matrícula', type:'text', req:false },
+    { id:'equipe', label:'Equipe', type:'text', req:true },
+    { id:'local', label:'Obra / Local', type:'text', req:true },
+    { id:'data', label:'Data', type:'date', req:true },
+    { id:'hora', label:'Hora', type:'time', req:false },
+  ],
+  'SESMT_CHECKLIST_02': [
+    { id:'equipe', label:'Equipe', type:'text', req:true },
+    { id:'responsavel', label:'Responsável', type:'text', req:true },
+    { id:'local', label:'Obra / Local', type:'text', req:true },
+    { id:'data', label:'Data', type:'date', req:true },
+    { id:'hora', label:'Hora', type:'time', req:false },
+  ],
+  'SESMT_CHECKLIST_04': [
+    { id:'equipe', label:'Equipe', type:'text', req:true },
+    { id:'encarregado', label:'Encarregado', type:'text', req:false },
+    { id:'responsavel_maquina', label:'Responsável pela Máquina', type:'text', req:true },
+    { id:'horimetro', label:'Horímetro', type:'text', req:false },
+    { id:'data', label:'Data', type:'date', req:true },
+    { id:'hora', label:'Hora', type:'time', req:false },
+  ],
+  'DEFAULT': [
+    { id:'equipe', label:'Equipe', type:'text', req:true },
+    { id:'encarregado', label:'Encarregado', type:'text', req:false },
+    { id:'responsavel_maquina', label:'Responsável pela Máquina', type:'text', req:false },
+    { id:'documento', label:'Documento (CNH etc.)', type:'text', req:false },
+    { id:'data', label:'Data', type:'date', req:true },
+    { id:'hora', label:'Hora', type:'time', req:false },
+  ],
+};
+
+async function selecionarModelo(id) {
+  modeloAtual = modelos.find(m => m.id === id);
+  if (!modeloAtual) return;
+
+  document.getElementById('cab-modelo-titulo').textContent = modeloAtual.titulo;
+
+  // Montar campos
+  const campos = CAMPOS_POR_TIPO[modeloAtual.codigo] || CAMPOS_POR_TIPO['DEFAULT'];
+  const container = document.getElementById('campos-cabecalho');
+
+  // Agrupar campos em pares quando cabem
+  let html = '';
+  const hoje = new Date().toISOString().split('T')[0];
+  const agora = new Date().toTimeString().slice(0,5);
+
+  for (let i = 0; i < campos.length; i++) {
+    const c = campos[i];
+    const val = c.type === 'date' ? hoje : c.type === 'time' ? agora : '';
+    html += `
+      <div class="form-group">
+        <label class="form-label">${c.label}${c.req ? ' *' : ''}</label>
+        <input class="form-input" type="${c.type}" id="cab-${c.id}"
+          value="${val}"
+          placeholder="${c.label}"
+          ${c.req ? 'required' : ''}>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  // Carregar itens do modelo
+  await carregarItensModelo(id);
+
+  irParaTela('tela-cabecalho');
+}
+
+async function carregarItensModelo(modeloId) {
+  const cacheKey = `sesmt_itens_${modeloId}`;
+  try {
+    const r = await fetch(`${API_BASE}/api/checklists/modelos/${modeloId}/itens`, { credentials: 'include' });
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    itensTodos = data;
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+  } catch {
+    const cache = localStorage.getItem(cacheKey);
+    if (cache) {
+      itensTodos = JSON.parse(cache);
+      mostrarToast('📦 Itens carregados do cache');
+    } else {
+      mostrarToast('❌ Sem itens disponíveis offline');
+      itensTodos = [];
+    }
+  }
+}
+
+function iniciarChecklist() {
+  // Validar campos obrigatórios
+  const campos = CAMPOS_POR_TIPO[modeloAtual.codigo] || CAMPOS_POR_TIPO['DEFAULT'];
+  for (const c of campos) {
+    if (c.req) {
+      const el = document.getElementById('cab-' + c.id);
+      if (!el || !el.value.trim()) {
+        mostrarToast('⚠️ Preencha: ' + c.label);
+        el && el.focus();
+        return;
+      }
+    }
+  }
+
+  // Salvar cabecalho
+  cabecalho = {};
+  campos.forEach(c => {
+    const el = document.getElementById('cab-' + c.id);
+    if (el) cabecalho[c.id] = el.value.trim();
+  });
+
+  if (!itensTodos.length) { mostrarToast('❌ Nenhum item carregado'); return; }
+
+  itemIdx = 0;
+  respostas = {};
+  renderItem();
+  irParaTela('tela-item');
+}
+
+// ══════════════════════════════════
+// TELA 3: ITENS
+// ══════════════════════════════════
+function renderItem() {
+  if (itemIdx >= itensTodos.length) { renderResumo(); irParaTela('tela-resumo'); return; }
+
+  const item = itensTodos[itemIdx];
+  const total = itensTodos.length;
+  const perc = Math.round((itemIdx / total) * 100);
+
+  document.getElementById('item-modelo-nome').textContent = modeloAtual.titulo;
+  document.getElementById('item-secao-nome').textContent = item.secao_titulo || '';
+  document.getElementById('item-badge-secao').textContent = item.secao_titulo || 'Seção';
+  document.getElementById('item-descricao').textContent = item.descricao;
+  document.getElementById('item-progresso').textContent = `${itemIdx + 1}/${total}`;
+  document.getElementById('progress-fill').style.width = perc + '%';
+
+  // Situações do modelo
+  const sits = modeloAtual.tipo_situacao;
+  const respAtual = respostas[item.id];
+
+  const SITS_CONFIG = {
+    'CONFORME':      { cls:'conforme',     icone:'✅', sub:'Item em conformidade' },
+    'NÃO CONFORME':  { cls:'nao-conforme', icone:'❌', sub:'Abrir não conformidade' },
+    'NÃO SE APLICA': { cls:'na',           icone:'—',  sub:'Não se aplica' },
+    'N/A':           { cls:'na',           icone:'—',  sub:'Não se aplica' },
+    'BOM':           { cls:'bom',          icone:'👍', sub:'Em bom estado' },
+    'RUIM':          { cls:'ruim',         icone:'👎', sub:'Em mau estado / atenção' },
+  };
+
+  const botoesEl = document.getElementById('botoes-situacao');
+  botoesEl.innerHTML = sits.map(s => {
+    const cfg = SITS_CONFIG[s] || { cls:'', icone:'•', sub:'' };
+    const ativo = respAtual?.situacao === s ? 'style="opacity:1;transform:scale(1.02)"' : '';
+    return `
+      <button class="btn-situacao ${cfg.cls} ${respAtual?.situacao === s ? cfg.cls : ''}"
+        onclick="selecionarSituacao('${s.replace(/'/g,"\\'")}')">
+        <span class="sit-icone">${cfg.icone}</span>
+        <div class="sit-texto">
+          <div>${s}</div>
+          <div class="sit-sub">${cfg.sub}</div>
+        </div>
+        ${respAtual?.situacao === s ? '<span style="margin-left:auto;font-size:20px">✓</span>' : ''}
+      </button>`;
+  }).join('');
+
+  // Quantidade
+  const quantWrap = document.getElementById('quant-wrap');
+  if (item.tem_quant) {
+    quantWrap.style.display = 'block';
+    document.getElementById('quant-valor').textContent = respAtual?.quant ?? 0;
+  } else {
+    quantWrap.style.display = 'none';
+  }
+
+  // Observação
+  const obsInput = document.getElementById('obs-input');
+  const obsToggle = document.getElementById('obs-toggle');
+  obsInput.value = respAtual?.obs || '';
+  if (respAtual?.obs) {
+    obsInput.classList.add('visivel');
+    obsToggle.style.display = 'none';
+  } else {
+    obsInput.classList.remove('visivel');
+    obsToggle.style.display = 'flex';
+  }
+
+  // Scroll para topo
+  document.getElementById('scroll-item').scrollTo(0, 0);
+
+  // Botão anterior
+  document.querySelector('.nav-inferior .btn-sec').disabled = itemIdx === 0;
+}
+
+function selecionarSituacao(sit) {
+  const item = itensTodos[itemIdx];
+  if (!respostas[item.id]) respostas[item.id] = {};
+  respostas[item.id].situacao = sit;
+
+  // Feedback visual imediato + avançar
+  renderItem();
+  setTimeout(() => proximoItem(sit), 300);
+}
+
+function proximoItem(sit) {
+  const item = itensTodos[itemIdx];
+  if (sit === null) {
+    // pular sem resposta
+  }
+  // salvar obs se visível
+  const obsInput = document.getElementById('obs-input');
+  if (obsInput.classList.contains('visivel') && obsInput.value.trim()) {
+    if (!respostas[item.id]) respostas[item.id] = {};
+    respostas[item.id].obs = obsInput.value.trim();
+  }
+  itemIdx++;
+  renderItem();
+}
+
+function voltarItem() {
+  if (itemIdx === 0) { irParaTela('tela-cabecalho'); return; }
+  itemIdx--;
+  renderItem();
+}
+
+function ajustarQuant(delta) {
+  const item = itensTodos[itemIdx];
+  if (!respostas[item.id]) respostas[item.id] = {};
+  const atual = respostas[item.id].quant ?? 0;
+  respostas[item.id].quant = Math.max(0, atual + delta);
+  document.getElementById('quant-valor').textContent = respostas[item.id].quant;
+}
+
+function toggleObs() {
+  const input = document.getElementById('obs-input');
+  const toggle = document.getElementById('obs-toggle');
+  input.classList.add('visivel');
+  toggle.style.display = 'none';
+  input.focus();
+}
+
+// ══════════════════════════════════
+// TELA 4: RESUMO
+// ══════════════════════════════════
+function renderResumo() {
+  atualizarBadgeOffline();
+  document.getElementById('resumo-modelo-nome').textContent = modeloAtual.titulo;
+
+  let conf = 0, nc = 0, na = 0;
+  const naoConformesItens = [];
+
+  itensTodos.forEach(item => {
+    const r = respostas[item.id];
+    if (!r?.situacao) return;
+    const s = r.situacao;
+    if (s === 'CONFORME' || s === 'BOM') conf++;
+    else if (s === 'NÃO CONFORME' || s === 'RUIM') {
+      nc++;
+      naoConformesItens.push({ ...item, obs: r.obs });
+    }
+    else na++;
+  });
+
+  document.getElementById('stat-conformes').textContent = conf;
+  document.getElementById('stat-nao-conformes').textContent = nc;
+  document.getElementById('stat-na').textContent = na;
+
+  // Emoji/título
+  if (nc === 0) {
+    document.getElementById('resumo-emoji').textContent = '✅';
+    document.getElementById('resumo-titulo').textContent = 'Ótimo resultado!';
+    resultadoGeral = 'CONFORME';
+  } else {
+    document.getElementById('resumo-emoji').textContent = '⚠️';
+    document.getElementById('resumo-titulo').textContent = `${nc} item${nc > 1 ? 's' : ''} não conforme${nc > 1 ? 's' : ''}`;
+    resultadoGeral = 'NÃO CONFORME';
+  }
+  document.getElementById('resumo-sub').textContent =
+    `${conf + nc + na} de ${itensTodos.length} itens respondidos`;
+
+  // Lista NC
+  const ncWrap = document.getElementById('nc-lista-wrap');
+  if (naoConformesItens.length) {
+    ncWrap.style.display = 'block';
+    document.getElementById('nc-lista').innerHTML = naoConformesItens.map(i => `
+      <div class="nc-item">
+        <strong>${i.secao_titulo || ''}</strong>
+        ${i.descricao}
+        ${i.obs ? `<div style="margin-top:4px;font-style:italic;opacity:0.8">Obs: ${i.obs}</div>` : ''}
+      </div>
+    `).join('');
+  } else {
+    ncWrap.style.display = 'none';
+  }
+
+  setResultado(resultadoGeral);
+}
+
+function setResultado(val) {
+  resultadoGeral = val;
+  document.getElementById('btn-resultado-conforme').className =
+    'resultado-btn' + (val === 'CONFORME' ? ' ativo conforme' : '');
+  document.getElementById('btn-resultado-nc').className =
+    'resultado-btn' + (val === 'NÃO CONFORME' ? ' ativo nao-conforme' : '');
+}
+
+// ══════════════════════════════════
+// ENVIO
+// ══════════════════════════════════
+async function enviarChecklist() {
+  if (!resultadoGeral) { mostrarToast('⚠️ Selecione o resultado geral'); return; }
+
+  const payload = {
+    modelo_id: modeloAtual.id,
+    cabecalho: { ...cabecalho, modelo_codigo: modeloAtual.codigo },
+    resultado: resultadoGeral,
+    observacoes_extras: document.getElementById('obs-extras').value.trim(),
+    respostas: itensTodos.map(item => ({
+      item_id: item.id,
+      situacao: respostas[item.id]?.situacao || null,
+      quant: respostas[item.id]?.quant ?? null,
+      obs: respostas[item.id]?.obs || null,
+    })).filter(r => r.situacao),
+    local_id: 'ck_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    created_at: new Date().toISOString(),
+  };
+
+  if (isOffline) {
+    salvarPendente(payload);
+    mostrarToast('📦 Salvo offline — será enviado com sinal');
+    setTimeout(() => irParaInicio(), 1500);
+    return;
+  }
+
+  document.getElementById('loading').classList.add('ativo');
+  try {
+    const r = await fetch(`${API_BASE}/api/checklists/preenchimentos`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error('Erro ' + r.status);
+    mostrarToast('✅ Checklist enviado com sucesso!');
+    setTimeout(() => irParaInicio(), 1500);
+  } catch(e) {
+    salvarPendente(payload);
+    mostrarToast('📦 Sem conexão — salvo para sincronizar depois');
+    setTimeout(() => irParaInicio(), 2000);
+  } finally {
+    document.getElementById('loading').classList.remove('ativo');
+  }
+}
+
+// ══════════════════════════════════
+// OFFLINE QUEUE
+// ══════════════════════════════════
+function salvarPendente(payload) {
+  const pendentes = JSON.parse(localStorage.getItem('sesmt_ck_pendentes') || '[]');
+  pendentes.push(payload);
+  localStorage.setItem('sesmt_ck_pendentes', JSON.stringify(pendentes));
+}
+
+async function sincronizarPendentes() {
+  const pendentes = JSON.parse(localStorage.getItem('sesmt_ck_pendentes') || '[]');
+  if (!pendentes.length) return;
+  const enviados = [];
+  for (const p of pendentes) {
+    try {
+      const r = await fetch(`${API_BASE}/api/checklists/preenchimentos`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p),
+      });
+      if (r.ok) enviados.push(p.local_id);
+    } catch {}
+  }
+  if (enviados.length) {
+    const restantes = pendentes.filter(p => !enviados.includes(p.local_id));
+    localStorage.setItem('sesmt_ck_pendentes', JSON.stringify(restantes));
+    mostrarToast(`✅ ${enviados.length} checklist(s) sincronizado(s)`);
+  }
+}
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  carregarModelos();
+  if (navigator.onLine) sincronizarPendentes();
+});
+</script>
+</body>
+</html>
